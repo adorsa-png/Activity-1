@@ -1,0 +1,84 @@
+/**
+ * ABSTRACTION: MenuItem is an abstract base class. It cannot be instantiated
+ * directly and forces subclasses to implement describe() and category.
+ * ENCAPSULATION: id, name and basePrice are private (#) fields, exposed only
+ * through getters / a validated setter.
+ */
+class MenuItem {
+  #id;
+  #name;
+  #basePrice;
+
+  constructor(id, name, basePrice) {
+    if (new.target === MenuItem) {
+      throw new TypeError("MenuItem is abstract and cannot be instantiated.");
+    }
+    this.#id = id;
+    this.#name = name;
+    this.basePrice = basePrice; // goes through the validating setter
+  }
+
+  get id() { return this.#id; }
+  get name() { return this.#name; }
+  get basePrice() { return this.#basePrice; }
+
+  set basePrice(value) {
+    if (typeof value !== "number" || value < 0) {
+      throw new RangeError("Price must be a non-negative number.");
+    }
+    this.#basePrice = value;
+  }
+
+  /** Default pricing; subclasses override it (POLYMORPHISM). */
+  getPrice() { return this.#basePrice; }
+
+  /** Abstract methods */
+  get category() { throw new Error("Subclass must implement 'category'."); }
+  describe() { throw new Error("Subclass must implement 'describe()'."); }
+}
+
+/** INHERITANCE: Food extends MenuItem. Spicy dishes cost extra. */
+class Food extends MenuItem {
+  #spicy;
+
+  constructor(id, name, basePrice, spicy = false) {
+    super(id, name, basePrice);
+    this.#spicy = spicy;
+  }
+
+  get isSpicy() { return this.#spicy; }
+  get category() { return "Food"; }
+  getPrice() { return this.basePrice + (this.#spicy ? 10 : 0); } // override
+  describe() { return this.#spicy ? "Spicy main dish" : "Main dish"; }
+}
+
+/** Beverage price is scaled by its cup size. */
+class Beverage extends MenuItem {
+  static SIZE_FACTOR = { Small: 1, Medium: 1.25, Large: 1.5 };
+  #size;
+
+  constructor(id, name, basePrice, size = "Medium") {
+    super(id, name, basePrice);
+    if (!(size in Beverage.SIZE_FACTOR)) throw new RangeError("Invalid size.");
+    this.#size = size;
+  }
+
+  get size() { return this.#size; }
+  get category() { return "Beverage"; }
+  getPrice() { return this.basePrice * Beverage.SIZE_FACTOR[this.#size]; } // override
+  describe() { return `${this.#size} cold drink`; }
+}
+
+/** Dessert can be on promo (10% off). */
+class Dessert extends MenuItem {
+  #onPromo;
+
+  constructor(id, name, basePrice, onPromo = false) {
+    super(id, name, basePrice);
+    this.#onPromo = onPromo;
+  }
+
+  get category() { return "Dessert"; }
+  getPrice() { return this.#onPromo ? this.basePrice * 0.9 : this.basePrice; } // override
+  describe() { return this.#onPromo ? "Sweet treat (10% off)" : "Sweet treat"; }
+}
